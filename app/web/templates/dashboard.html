@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-label">Mesin Online / Total</div>
+        <div class="stat-value" style="color: #16a34a;">{{ online_devices }} <span style="font-size: 1.1rem; color: #6b7280; font-weight: normal;">/ {{ total_devices }}</span></div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Kehadiran Hari Ini</div>
+        <div class="stat-value" style="color: #2563eb;">{{ today_punches }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Antrian Command Pending</div>
+        <div class="stat-value" style="color: #d97706;">{{ pending_commands }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Command Gagal (Dead)</div>
+        <div class="stat-value" style="color: #dc2626;">{{ dead_commands }}</div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <span>Status Mesin Absensi Terdaftar</span>
+        <a href="/devices" class="btn btn-outline btn-sm">Kelola Mesin</a>
+    </div>
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>Status</th>
+                    <th>Serial Number</th>
+                    <th>Nama & Model</th>
+                    <th>Role</th>
+                    <th>IP Terakhir</th>
+                    <th>Terakhir Terlihat</th>
+                    <th>Aksi Cepat</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for dev in devices %}
+                <tr>
+                    <td>
+                        {% if dev.is_online %}
+                            <span class="badge badge-success">Online</span>
+                        {% else %}
+                            <span class="badge badge-danger">Offline</span>
+                        {% endif %}
+                    </td>
+                    <td><strong>{{ dev.serial_number }}</strong></td>
+                    <td>
+                        <div>{{ dev.name }}</div>
+                        <small style="color: #6b7280;">{{ dev.model }} (FW: {{ dev.firmware or 'Unknown' }})</small>
+                    </td>
+                    <td>
+                        {% if dev.is_master %}
+                            <span class="badge badge-info">MASTER</span>
+                        {% else %}
+                            <span class="badge badge-gray">Target</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ dev.ip_last or '-' }}</td>
+                    <td>
+                        {% if dev.last_seen_at %}
+                            {{ dev.last_seen_at.strftime('%Y-%m-%d %H:%M:%S') }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td>
+                        <form method="POST" action="/api/devices/{{ dev.serial_number }}/command?command_name=CHECK" style="display:inline;">
+                            <button type="submit" class="btn btn-outline btn-sm">Sync</button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" style="text-align: center; color: #6b7280; padding: 30px;">
+                        Belum ada mesin absensi yang terhubung. Masukkan alamat IP Windows Server ini di menu <strong>Comm &gt; Cloud Server Setting</strong> pada mesin ZKTeco.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <span>Log Kehadiran Terkini</span>
+        <a href="/attlog" class="btn btn-outline btn-sm">Lihat Semua</a>
+    </div>
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>Waktu Punch (Lokal)</th>
+                    <th>Mesin</th>
+                    <th>PIN</th>
+                    <th>Nama</th>
+                    <th>Status</th>
+                    <th>Metode Verifikasi</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in latest_logs %}
+                <tr>
+                    <td><strong>{{ log.punched_at_local.strftime('%Y-%m-%d %H:%M:%S') }}</strong></td>
+                    <td>{{ log.device_sn }}</td>
+                    <td>{{ log.pin }}</td>
+                    <td>{{ emp_names.get(log.pin, '-') }}</td>
+                    <td>
+                        <span class="badge badge-info">{{ log.status_label }}</span>
+                    </td>
+                    <td>{{ log.verify_label }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" style="text-align: center; color: #6b7280; padding: 30px;">
+                        Belum ada log kehadiran masuk hari ini.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

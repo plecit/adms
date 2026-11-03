@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <span>Filter Log Kehadiran</span>
+    </div>
+    <div class="card-body">
+        <form method="GET" action="/attlog" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; align-items: end;">
+            <div class="form-group" style="margin-bottom: 0;">
+                <label>Filter PIN</label>
+                <input type="text" name="pin" value="{{ filter_pin or '' }}" placeholder="Semua PIN" class="form-control">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+                <label>Filter Mesin (SN)</label>
+                <input type="text" name="device_sn" value="{{ filter_sn or '' }}" placeholder="Semua SN" class="form-control">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+                <label>Debounce Filter (Detik)</label>
+                <select name="debounce" class="form-control">
+                    <option value="0" {% if debounce == 0 %}selected{% endif %}>Semua Data (Mentah)</option>
+                    <option value="60" {% if debounce == 60 %}selected{% endif %}>60 Detik (1 Menit)</option>
+                    <option value="300" {% if debounce == 300 %}selected{% endif %}>300 Detik (5 Menit)</option>
+                </select>
+            </div>
+            <div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Terapkan Filter</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <span>Log Absensi Real-Time (Anti-Redundan)</span>
+        <span style="font-size: 0.85rem; color: #6b7280;">Menampilkan {{ logs|length }} log terbaru</span>
+    </div>
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>Waktu Mesin (Lokal)</th>
+                    <th>Waktu Server (UTC)</th>
+                    <th>Serial Number Mesin</th>
+                    <th>PIN Karyawan</th>
+                    <th>Status Absensi</th>
+                    <th>Metode Verifikasi</th>
+                    <th>Workcode</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logs %}
+                <tr>
+                    <td><strong>{{ log.punched_at_local.strftime('%Y-%m-%d %H:%M:%S') }}</strong></td>
+                    <td><small style="color: #6b7280;">{{ log.punched_at.strftime('%Y-%m-%d %H:%M:%S') }}</small></td>
+                    <td>{{ log.device_sn }}</td>
+                    <td><strong>{{ log.pin }}</strong></td>
+                    <td>
+                        <span class="badge badge-info">{{ log.status_label }}</span>
+                    </td>
+                    <td>{{ log.verify_label }}</td>
+                    <td>{{ log.workcode or '0' }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" style="text-align: center; color: #6b7280; padding: 30px;">
+                        Tidak ada log absensi yang cocok dengan filter.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

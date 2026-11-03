@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <span>Antrian Perintah ke Mesin (Device Command Queue)</span>
+    </div>
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Mesin (SN)</th>
+                    <th>Tipe Perintah</th>
+                    <th>Idempotency Key</th>
+                    <th>Status</th>
+                    <th>Percobaan</th>
+                    <th>Error Terakhir</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for cmd in commands %}
+                <tr>
+                    <td>#{{ cmd.id }}</td>
+                    <td><strong>{{ cmd.device_sn }}</strong></td>
+                    <td>{{ cmd.command_type }}</td>
+                    <td><small style="color: #6b7280;">{{ cmd.idempotency_key }}</small></td>
+                    <td>
+                        {% if cmd.state == 'acked' %}
+                            <span class="badge badge-success">ACKED</span>
+                        {% elif cmd.state == 'sent' %}
+                            <span class="badge badge-info">SENT</span>
+                        {% elif cmd.state == 'pending' %}
+                            <span class="badge badge-warning">PENDING</span>
+                        {% elif cmd.state == 'dead' %}
+                            <span class="badge badge-danger">DEAD</span>
+                        {% elif cmd.state == 'failed' %}
+                            <span class="badge badge-danger">FAILED</span>
+                        {% else %}
+                            <span class="badge badge-gray">{{ cmd.state }}</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ cmd.attempts }} / {{ cmd.max_attempts }}</td>
+                    <td><small style="color: #dc2626;">{{ cmd.last_error or '-' }}</small></td>
+                    <td>
+                        {% if cmd.state in ['dead', 'failed'] %}
+                        <form method="POST" action="/api/commands/{{ cmd.id }}/retry" style="display:inline;">
+                            <button type="submit" class="btn btn-outline btn-sm">Retry</button>
+                        </form>
+                        {% elif cmd.state == 'pending' %}
+                        <form method="POST" action="/api/commands/{{ cmd.id }}/cancel" style="display:inline;">
+                            <button type="submit" class="btn btn-danger btn-sm">Batal</button>
+                        </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="8" style="text-align: center; color: #6b7280; padding: 30px;">
+                        Antrian command kosong.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

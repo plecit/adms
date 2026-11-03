@@ -1,0 +1,53 @@
+services:
+  app:
+    build: .
+    container_name: adms-app
+    restart: unless-stopped
+    command: uvicorn app.main:app --host 0.0.0.0 --port 80
+    ports:
+      - "80:80"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://adms:adms_secret@db:5432/adms_db
+      - DATABASE_URL_SYNC=postgresql://adms:adms_secret@db:5432/adms_db
+      - BIOMETRIC_ENCRYPTION_KEY=12345678901234567890123456789012
+      - DEFAULT_TZ_OFFSET_MINUTES=420
+      - ALLOW_UNKNOWN_DEVICES=true
+      - LOG_LEVEL=INFO
+    depends_on:
+      db:
+        condition: service_healthy
+
+  worker:
+    build: .
+    container_name: adms-worker
+    restart: unless-stopped
+    command: python -m app.workers.runner
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://adms:adms_secret@db:5432/adms_db
+      - DATABASE_URL_SYNC=postgresql://adms:adms_secret@db:5432/adms_db
+      - BIOMETRIC_ENCRYPTION_KEY=12345678901234567890123456789012
+      - LOG_LEVEL=INFO
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:16-alpine
+    container_name: adms-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: adms
+      POSTGRES_PASSWORD: adms_secret
+      POSTGRES_DB: adms_db
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U adms -d adms_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pgdata:

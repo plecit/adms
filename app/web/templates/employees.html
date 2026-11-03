@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <span>Tambah Karyawan Baru (Otomatis Sync ke Mesin)</span>
+    </div>
+    <div class="card-body">
+        <form method="POST" action="/employees/create" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; align-items: end;">
+            <div class="form-group" style="margin-bottom: 0;">
+                <label>PIN Karyawan (Angka)</label>
+                <input type="text" name="pin" required placeholder="Contoh: 101" class="form-control">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+                <label>Nama Lengkap</label>
+                <input type="text" name="full_name" required placeholder="Nama Lengkap" class="form-control">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+                <label>Nomor Kartu RFID (Opsional)</label>
+                <input type="text" name="card_no" placeholder="Contoh: 00123456" class="form-control">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+                <label>Hak Akses (Privilege)</label>
+                <select name="privilege" class="form-control">
+                    <option value="0">User Normal</option>
+                    <option value="14">Super Admin</option>
+                </select>
+            </div>
+            <div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Daftarkan &amp; Push ke Mesin</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <span>Daftar Karyawan &amp; Status Biometrik</span>
+    </div>
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>PIN</th>
+                    <th>Nama Karyawan</th>
+                    <th>No. Kartu</th>
+                    <th>Hak Akses</th>
+                    <th>Template Biometrik</th>
+                    <th>Status</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for emp in employees %}
+                <tr>
+                    <td><strong>{{ emp.pin }}</strong></td>
+                    <td>
+                        {{ emp.full_name }}
+                        {% if emp.needs_review %}
+                            <span class="badge badge-warning" title="Dibuat langsung dari mesin fisik">Auto-Import</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ emp.card_no or '-' }}</td>
+                    <td>
+                        {% if emp.privilege == 14 %}
+                            <span class="badge badge-danger">Admin</span>
+                        {% else %}
+                            <span class="badge badge-gray">User</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="badge badge-info">{{ emp.finger_count }} Sidik Jari</span>
+                        <span class="badge badge-success">{{ emp.face_count }} Wajah</span>
+                    </td>
+                    <td>
+                        {% if emp.is_active %}
+                            <span class="badge badge-success">Aktif</span>
+                        {% else %}
+                            <span class="badge badge-danger">Nonaktif</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <form method="POST" action="/employees/delete" onsubmit="return confirm('Hapus karyawan ini dari server dan semua mesin?');" style="display:inline;">
+                            <input type="hidden" name="pin" value="{{ emp.pin }}">
+                            <button type="submit" class="btn btn-danger btn-sm">Hapus</button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" style="text-align: center; color: #6b7280; padding: 30px;">
+                        Belum ada data karyawan. Daftarkan lewat form di atas atau daftarkan fisik pada mesin master.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

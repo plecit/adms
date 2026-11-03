@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <span>Daftar Mesin Absensi (SenseFace 4A & M2-LR)</span>
+    </div>
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>Status</th>
+                    <th>Serial Number</th>
+                    <th>Nama Mesin</th>
+                    <th>Model</th>
+                    <th>Timezone</th>
+                    <th>Role Master</th>
+                    <th>Kapabilitas Biometrik</th>
+                    <th>Aksi Kontrol</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for dev in devices %}
+                <tr>
+                    <td>
+                        {% if dev.is_online %}
+                            <span class="badge badge-success">Online</span>
+                        {% else %}
+                            <span class="badge badge-danger">Offline</span>
+                        {% endif %}
+                    </td>
+                    <td><strong>{{ dev.serial_number }}</strong></td>
+                    <td>{{ dev.name }}</td>
+                    <td>{{ dev.model }}</td>
+                    <td>UTC+{{ dev.tz_offset_minutes // 60 }}</td>
+                    <td>
+                        {% if dev.is_master %}
+                            <span class="badge badge-info">MASTER</span>
+                        {% else %}
+                            <span class="badge badge-gray">Target</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <small style="color: #4b5563;">
+                            {% if dev.capabilities %}
+                                {% for k, v in dev.capabilities.items() %}
+                                    {% if k in ['FaceCount', 'FingerCount', 'UserCount', 'pushver'] %}
+                                        <strong>{{ k }}:</strong> {{ v }} &nbsp;
+                                    {% endif %}
+                                {% endfor %}
+                            {% else %}
+                                <em>Auto-detect saat handshake</em>
+                            {% endif %}
+                        </small>
+                    </td>
+                    <td>
+                        <div style="display: flex; gap: 5px;">
+                            <form method="POST" action="/api/devices/{{ dev.serial_number }}/command?command_name=CHECK" style="display:inline;">
+                                <button type="submit" class="btn btn-outline btn-sm">Check</button>
+                            </form>
+                            <form method="POST" action="/api/devices/{{ dev.serial_number }}/command?command_name=INFO" style="display:inline;">
+                                <button type="submit" class="btn btn-outline btn-sm">Info</button>
+                            </form>
+                            <form method="POST" action="/api/devices/{{ dev.serial_number }}/command?command_name=REBOOT" onsubmit="return confirm('Yakin ingin merestart mesin ini?');" style="display:inline;">
+                                <button type="submit" class="btn btn-outline btn-sm">Reboot</button>
+                            </form>
+                            {% if dev.is_master %}
+                            <form method="POST" action="/api/devices/{{ dev.serial_number }}/command?command_name=RESYNC" onsubmit="return confirm('Tarik ulang seluruh data dan template dari master?');" style="display:inline;">
+                                <button type="submit" class="btn btn-primary btn-sm">Tarik dari Master</button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="8" style="text-align: center; color: #6b7280; padding: 30px;">
+                        Belum ada mesin absensi yang terdaftar.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

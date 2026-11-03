@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <span>Catatan Konflik Nilai Atribut (Attlog Conflicts)</span>
+    </div>
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>Waktu Diterima</th>
+                    <th>Mesin</th>
+                    <th>PIN</th>
+                    <th>Waktu Punch</th>
+                    <th>Rincian Konflik</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for conf in conflicts %}
+                <tr>
+                    <td>{{ conf.received_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                    <td>{{ conf.device_sn }}</td>
+                    <td>{{ conf.pin }}</td>
+                    <td>{{ conf.punched_at.strftime('%Y-%m-%d %H:%M:%S UTC') }}</td>
+                    <td>
+                        <pre style="background: #f3f4f6; padding: 5px; border-radius: 4px; font-size: 0.8rem;">{{ conf.conflict_data }}</pre>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5" style="text-align: center; color: #6b7280; padding: 20px;">
+                        Nol konflik data terdeteksi. Sistem berjalan konsisten.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <span>Log Raw Requests (Append-Only Audit)</span>
+    </div>
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Waktu</th>
+                    <th>Mesin (SN)</th>
+                    <th>Method &amp; Path</th>
+                    <th>Query String</th>
+                    <th>Status Parse</th>
+                    <th>Ukuran Body</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for req in raw_requests %}
+                <tr>
+                    <td>#{{ req.id }}</td>
+                    <td>{{ req.received_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                    <td><strong>{{ req.device_sn or '-' }}</strong></td>
+                    <td><code>{{ req.method }} {{ req.path }}</code></td>
+                    <td><small style="color: #6b7280;">{{ req.query or '-' }}</small></td>
+                    <td>
+                        {% if req.parse_status == 'success' %}
+                            <span class="badge badge-success">SUCCESS</span>
+                        {% elif req.parse_status == 'partial' %}
+                            <span class="badge badge-warning">PARTIAL</span>
+                        {% elif req.parse_status == 'failed' %}
+                            <span class="badge badge-danger">FAILED</span>
+                        {% else %}
+                            <span class="badge badge-gray">{{ req.parse_status }}</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ req.body|length if req.body else 0 }} chars</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" style="text-align: center; color: #6b7280; padding: 30px;">
+                        Belum ada raw request tersimpan.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
